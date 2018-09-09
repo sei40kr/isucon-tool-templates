@@ -1,0 +1,7 @@
+# -*- mode: sh -*-
+
+SSH_HOST='59.106.212.131'
+SSH_USER='root'
+
+MYSQL_USER='root'
+MYSQL_PASSWORD='root'

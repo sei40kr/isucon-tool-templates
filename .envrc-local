@@ -1,0 +1,17 @@
+# -*- mode: sh -*-
+
+MYSQL_ROOT_PASSWORD=root
+
+export ISUTAR_DB_HOST=localhost
+export ISUTAR_DB_PORT=3306
+export ISUTAR_DB_USER=root
+export ISUTAR_DB_PASSWORD="$MYSQL_ROOT_PASSWORD"
+
+export ISUDA_DB_HOST=localhost
+export ISUDA_DB_PORT=3306
+export ISUDA_DB_USER=root
+export ISUDA_DB_PASSWORD="$MYSQL_ROOT_PASSWORD"
+
+export ISUDA_ORIGIN="http://localhost:5000"
+export ISUTAR_ORIGIN="http://localhost:5001"
+export ISUPAM_ORIGIN="http://localhost:5050"
