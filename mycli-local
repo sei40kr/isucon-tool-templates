@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+# mycli-local
+# author: Seong Yong-ju <sei40kr@gmail.com>
+
+set -euo pipefail
+IFS=$'\n\t'
+
+cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+
+. .envrc-local
+
+
+mycli -h localhost -u root -p "$MYSQL_ROOT_PASSWORD"

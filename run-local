@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+# run-local
+# author: Seong Yong-ju <sei40kr@gmail.com>
+
+set -euo pipefail
+IFS=$'\n\t'
+
+cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+
+. .envrc-local
+
+if ! docker ps --format '{{ .Names }}' | grep -q isucon-mysql; then
+    echo '===> Running a MySQL server ...'
+    docker rm -f isucon-mysql 1>/dev/null 2>/dev/null || :
+    docker run --rm -de MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASSWORD" --name isucon-mysql -p 3306:3306 --rm mysql
+
+    echo '===> Waiting the MySQL server initialized ...'
+    until docker exec isucon-mysql mysql -u"$ISUDA_DB_USER" -p"$ISUDA_DB_PASSWORD" 1>/dev/null 2>/dev/null; do
+        sleep 1
+    done
+fi
+
+echo '===> Deploying the SQL files ...'
+docker exec isucon-mysql mysql -u"$ISUDA_DB_USER" -p"$ISUDA_DB_PASSWORD" -e 'DROP DATABASE IF EXISTS isuda; CREATE DATABASE isuda'
+docker exec -i isucon-mysql mysql -u"$ISUDA_DB_USER" -p"$ISUDA_DB_PASSWORD" isuda <db/isuda.sql
+docker exec -i isucon-mysql mysql -u"$ISUDA_DB_USER" -p"$ISUDA_DB_PASSWORD" isuda <db/isuda_user.sql
+docker exec -i isucon-mysql mysql -u"$ISUDA_DB_USER" -p"$ISUDA_DB_PASSWORD" isuda <db/isuda_entry.sql
+docker exec isucon-mysql mysql -u"$ISUTAR_DB_USER" -p"$ISUTAR_DB_PASSWORD" -e 'DROP DATABASE IF EXISTS isutar; CREATE DATABASE isutar'
+docker exec -i isucon-mysql mysql -u"$ISUTAR_DB_USER" -p"$ISUTAR_DB_PASSWORD" isutar <db/isutar.sql
+
+echo '===> Launching the application services ...'
+pkill -x isutar || :
+pkill -x isuda || :
+pkill -x isupam || :
+( cd webapp/go; ./isutar & ./isuda ) & ( cd webapp/bin; ./isupam -p 5050 )

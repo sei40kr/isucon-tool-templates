@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+# deploy-remote
+# author: Seong Yong-ju <sei40kr@gmail.com>
+
+cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+
+. .envrc-remote
+
+
+## Collect the files to deploy
+
+rm -rf deploy
+
+mkdir -p deploy/db
+cp db/{isuda,isuda_entry,isuda_user,isutar}.sql deploy/db
+
+mkdir -p deploy/webapp
+cp -Lr webapp/go deploy/webapp/go
+
+
+## Deploy the files and restart the application services
+
+scp -r deploy "${SSH_USER}@${SSH_HOST}:/tmp"
+ssh "${SSH_USER}@${SSH_HOST}" "
+mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD} -e 'DROP DATABASE IF EXISTS isuda; CREATE DATABASE isuda' &&
+    mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD} isuda </tmp/deploy/db/isuda.sql &&
+    mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD} isuda </tmp/deploy/db/isuda_user.sql &&
+    mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD} isuda </tmp/deploy/db/isuda_entry.sql &&
+    mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD} -e 'DROP DATABASE IF EXISTS isutar; CREATE DATABASE isutar'
+    mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD} isutar </tmp/deploy/db/isutar.sql &&
+    rm -rf /home/isucon/webapp &&
+    cp -r /tmp/deploy/webapp /home/isucon/webapp &&
+    rm -rf /tmp/deploy &&
+    systemctl restart isupam.service isuda.go.service isutar.go.service"
+
+# Remove deploy directory
+rm -rf deploy
